@@ -433,8 +433,6 @@ object *fn_touch_calibrate(object *args, object *env)
 
 
 
-
-
 // Symbol names
 const char stringnow[] PROGMEM  = "now";
 const char stringtouch_press[] PROGMEM = "touch-press";
@@ -443,7 +441,6 @@ const char stringtouch_y[] PROGMEM = "touch-y";
 const char stringtouch_calibrate[] PROGMEM = "touch-calibrate";
 const char stringtouch_setcal[] PROGMEM = "touch-setcal";
 const char stringtouch_printcal[] PROGMEM = "touch-printcal";
-
 
 // Documentation strings
 const char docnow[] PROGMEM  = "(now [hh mm ss])\n"
@@ -465,7 +462,6 @@ const char doctouch_printcal[] PROGMEM = "(touch-printcal)\n"
 
 
 
-
 // Symbol lookup table
 const tbl_entry_t lookup_table2[] PROGMEM  = {
     { stringnow, fn_now, 0203, docnow },
@@ -475,7 +471,7 @@ const tbl_entry_t lookup_table2[] PROGMEM  = {
     { stringtouch_calibrate, fn_touch_calibrate, 0200, doctouch_calibrate },
     { stringtouch_setcal, fn_touch_setcal, 0217, doctouch_setcal },
     { stringtouch_printcal, fn_touch_printcal, 0200, doctouch_printcal },
-    
+
 };
 
 

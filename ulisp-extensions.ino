@@ -430,29 +430,7 @@ object *fn_touch_calibrate(object *args, object *env)
 }
 
 
-object *fn_readserial (object *args, object *env) {
-  (void) env;
-  /*int c ; 
 
-  while (!Serial.available());
-  char temp = Serial.read();
-
-    KybdAvailable = 1;
-    ReadPtr = 0;
-
-    if (WritePtr < KybdBufSize) {
-    KybdBuf[WritePtr++] = temp;
-    
-  }
-  if (ReadPtr != WritePtr) return number(KybdBuf[ReadPtr++]);
-  KybdAvailable = 0;
-  WritePtr = 0;*/
-
-  unsigned long start = millis();
-  while (!Serial.available()) { delay(1); if (millis() - start > 1000) clrflag(NOECHO); }
-  int c = Serial.read() ;
-  return  number(c);
-}
 
 
 
@@ -465,7 +443,7 @@ const char stringtouch_y[] PROGMEM = "touch-y";
 const char stringtouch_calibrate[] PROGMEM = "touch-calibrate";
 const char stringtouch_setcal[] PROGMEM = "touch-setcal";
 const char stringtouch_printcal[] PROGMEM = "touch-printcal";
-const char string_readserial[] PROGMEM = "read-serial";
+
 
 // Documentation strings
 const char docnow[] PROGMEM  = "(now [hh mm ss])\n"
@@ -484,8 +462,7 @@ const char doctouch_setcal[] PROGMEM = "(touch-setcal minx maxx miny maxy\n     
 "Set touchscreen calibration parameters.";
 const char doctouch_printcal[] PROGMEM = "(touch-printcal)\n"
 "Print touchscreen calibration parameters.";
-const char doc_readserial[] PROGMEM = "(read-serial)\n"
-"Reads a byte from a serial port and returns it.";
+
 
 
 
@@ -498,8 +475,7 @@ const tbl_entry_t lookup_table2[] PROGMEM  = {
     { stringtouch_calibrate, fn_touch_calibrate, 0200, doctouch_calibrate },
     { stringtouch_setcal, fn_touch_setcal, 0217, doctouch_setcal },
     { stringtouch_printcal, fn_touch_printcal, 0200, doctouch_printcal },
-    { string_readserial, fn_readserial, 0200, doc_readserial },
-
+    
 };
 
 

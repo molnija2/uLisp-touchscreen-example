@@ -2,6 +2,36 @@
  User Extensions
 */
 
+
+#if defined(ESP32_2432S028R)
+
+#include <SPI.h>
+#include <TFT_Touch.h> // Touchscreen driver chip
+#define COLOR_WHITE TFT_WHITE
+#define COLOR_BLACK TFT_BLACK
+#define COLOR_GREEN 0x07e0
+
+// TFT Screen pixel resolution in landscape orientation, change these to suit your display
+// Defined in landscape orientation !
+#define HRES 320
+#define VRES 240
+
+#if defined(touchscreen_support)
+
+#define XPT2046_IRQ			36
+#define XPT2046_MOSI		32
+#define XPT2046_MISO		39
+#define XPT2046_CLK			25
+#define XPT2046_CS			33
+TFT_Touch tft_touch = TFT_Touch(XPT2046_CS, XPT2046_CLK, XPT2046_MOSI, XPT2046_MISO) ;
+
+#endif  // TOUCHSCREEN_DRIVERS
+
+
+#endif  //  ESP32_2432S028R
+
+
+
 // Definitions
 object *fn_now (object *args, object *env) {
   (void) env;

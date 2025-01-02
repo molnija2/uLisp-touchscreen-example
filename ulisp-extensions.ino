@@ -2,36 +2,6 @@
  User Extensions
 */
 
-
-#if defined(ESP32_2432S028R)
-
-#include <SPI.h>
-#include <TFT_Touch.h> // Touchscreen driver chip
-#define COLOR_WHITE TFT_WHITE
-#define COLOR_BLACK TFT_BLACK
-#define COLOR_GREEN 0x07e0
-
-// TFT Screen pixel resolution in landscape orientation, change these to suit your display
-// Defined in landscape orientation !
-#define HRES 320
-#define VRES 240
-
-#if defined(touchscreen_support)
-
-#define XPT2046_IRQ			36
-#define XPT2046_MOSI		32
-#define XPT2046_MISO		39
-#define XPT2046_CLK			25
-#define XPT2046_CS			33
-TFT_Touch tft_touch = TFT_Touch(XPT2046_CS, XPT2046_CLK, XPT2046_MOSI, XPT2046_MISO) ;
-
-#endif  // TOUCHSCREEN_DRIVERS
-
-
-#endif  //  ESP32_2432S028R
-
-
-
 // Definitions
 object *fn_now (object *args, object *env) {
   (void) env;
@@ -61,17 +31,19 @@ void initTouchscreen()
   #if defined(touchscreen_support)
 
   tft_touch.setResolution( HRES, VRES) ;
-  tft_touch.setRotation(0) ;
+  tft_touch.setRotation(3) ;
   
   // TouchInitCalibration
   // Change it by calibrated values 
-  /*tft_touch.setCal(0, 4095, 0, 4095, HRES, VRES, 1 );
-  tft_touch._xflip = 1 ;
-  tft_touch._yflip = 1 ;*/
-
-  tft_touch.setCal(526, 3451, 678, 3443, 320, 240, 0 ) ;
+  /*tft_touch._xflip = 0 ;
+  tft_touch._yflip = 0 ;
+  tft_touch.setCal(0, 4095, 0, 4095, HRES, VRES, 0 );*/
+  pfstring(PSTR("Touchscreen setup\n"), pserial);
   tft_touch._xflip = 1 ;
   tft_touch._yflip = 1 ;
+  tft_touch.setCal(526, 3451, 678, 3443, HRES, VRES,  1 ) ;
+
+  //tft_touch._xyswap = 1 ;
 
 
   #endif
@@ -151,9 +123,13 @@ object *fn_touch_setcal(object *args, object *env)
   { 
     yflip = checkinteger(car(obj)) ;
 
-    tft_touch.setCal(hmin, hmax, vmin, vmax, hres, vres, xyswap);
+    tft_touch.setResolution( HRES, VRES) ;
+    tft_touch.setRotation(3) ;
+
     tft_touch._xflip = xflip ;
     tft_touch._yflip = yflip ;
+
+    tft_touch.setCal(hmin, hmax, vmin, vmax, hres, vres, xyswap);
 
     return tee ;
   }
@@ -211,8 +187,10 @@ object *fn_touch_calibrate(object *args, object *env)
 
 
   // Reset the calibration values
+  tft_touch._xflip = 0 ;
+  tft_touch._yflip = 0 ;
+  tft_touch._xyswap = 0 ;
   tft_touch.setCal(0, 4095, 0, 4095, HRES, VRES, 0);//, 0, 0);
-  
   // Set TFT the screen to landscape orientation
   tft.setRotation(0);
     // Set Touch the screen to the same landscape orientation
@@ -345,6 +323,20 @@ object *fn_touch_calibrate(object *args, object *env)
   int vmin = y1;// - (y2 - y1) * 3 / (VRES/10 - 6);
   int vmax = y2;// + (y2 - y1) * 3 / (VRES/10 - 6);
 
+  Serial.print("Parameters : ");
+  Serial.print(hmin);
+  Serial.print(",");
+  Serial.print(hmax);
+  Serial.print(",");
+  Serial.print(vmin);
+  Serial.print(",");
+  Serial.print(vmax);
+  Serial.print(", xyswap=");
+  Serial.print(xyswap);
+  Serial.print(", xflip=");
+  Serial.print(xflip);
+  Serial.print(", yflip=");
+  Serial.println(yflip);
 
   tft_touch.setCal(hmin,hmax,vmin,vmax, HRES, VRES, xyswap);
   
@@ -352,8 +344,28 @@ object *fn_touch_calibrate(object *args, object *env)
   tft_touch._yflip = yflip ;
 
   
-  pfstring(PSTR("\nUse command:"), pserial);
-  PrintToucscreenParameters() ;
+  pfstring(PSTR("\nUse command:\n"), pserial);
+    Serial.print("(touch-setcal  ");
+  Serial.print(hmin);
+  Serial.print(" ");
+  Serial.print(hmax);
+  Serial.print(" ");
+  Serial.print(vmin);
+  Serial.print(" ");
+  Serial.print(vmax);
+  Serial.print(" ");
+  Serial.print(320);
+  Serial.print(" ");
+  Serial.print(240);
+  Serial.print(" ");
+  Serial.print(xyswap);
+  Serial.print(" ");
+  Serial.print(xflip);
+  Serial.print(" ");
+  Serial.print(yflip);
+  Serial.println(")");
+
+  //PrintToucscreenParameters() ;
 
   // *********  Test calibration result  *************
   drawCalibrationTestPrompt() ;
@@ -461,6 +473,293 @@ object *fn_touch_calibrate(object *args, object *env)
 
 
 
+/*
+(kbhit)  -  test whether any keyboard keys hits"
+*/
+
+object *fn_kbhit (object *args, object *env) {
+  (void) env;
+
+  if(Serial.available()>0) return tee ;
+
+  return  nil;
+}
+
+const char string_kbhit[] = "kbhit" ;
+const char doc_kbhit[] = "(kbhit) - test whether any keyboard keys hits.\n"
+" Returns t if ney char symbols are available"
+"and otherwise returnsnil.";
+
+
+
+/* Insert '/' symbol into begin of filename if it is absent.
+"name" => "/name",  "home/name" => "/home/name"
+*/
+void test_filename(char *name) {
+  int len, i ;
+  char *cPtr ;
+  if (name[0] == '/' ) return ;
+  len = strlen(name) ;
+  cPtr = &name[len] ;
+  *(cPtr+1) = 0 ;
+
+  for (i=0;i<len;i++) {
+      *cPtr= *(cPtr-1) ;
+      cPtr -- ;  
+  }
+
+  name[0] = '/' ;
+}
+
+
+
+/*(probe-file pathspec)  tests whether a file exists.
+Returns nil if there is no file (directory) named pathspec,
+and otherwise returns the truename of pathspec.
+(probe-file "pathname")  - tests whether a file "pathname" exists
+(probe-file "pathname/")  -  tests whether a directory "pathname" exists
+*/
+object *fn_probefile (object *args, object *env) {
+#if defined(sdcardsupport)
+  (void) env;
+  char pattern_string[256] ;
+  int findDir = 0 ;
+ 
+  if (stringp(car(args))) cstring(car(args), pattern_string, 256) ;
+  else {
+    error("argument must be string", car(args)); return nil; 
+  }
+ 
+  if (pattern_string[strlen(pattern_string)-1] == '/') {
+    pattern_string[strlen(pattern_string)-1] = 0x0 ;
+    findDir = 1 ;
+  }
+
+  test_filename(pattern_string) ;
+  SDBegin();
+  if (SD.exists(pattern_string)) {
+    File entry = SD.open(pattern_string) ;
+    if ( (entry.isDirectory()) && (findDir)) {
+      entry.close();
+      return car(args);
+    }
+    else if ( (!entry.isDirectory() )&& (!findDir)) {
+      entry.close();
+      return car(args);
+    }
+  }
+  return nil;
+#else
+  (void) args, (void) env;
+  error2("not supported");
+  return nil;
+#endif
+}
+
+
+/* (delete-file pathspec)   delete specified file.
+Returns true if success and otherwise returns nil.
+*/
+object *fn_deletefile (object *args, object *env) {
+#if defined(sdcardsupport)
+  (void) env;
+  char pattern_string[256] ;
+
+  if (stringp(car(args))) cstring(car(args), pattern_string, 256) ;
+  else {
+    error("argument must be string", car(args)); return nil; 
+  }
+
+  test_filename(pattern_string) ;
+  SDBegin();
+  if (SD.exists(pattern_string)) {
+    if (SD.remove(pattern_string)) return tee;
+    else return nil;
+  }
+  return tee;
+#else
+  (void) args, (void) env;
+  error2("not supported");
+  return nil;
+#endif
+}
+
+
+/* (delete-dir pathspec)   delete specified directory.
+Returns true if success and otherwise returns nil.
+*/
+object *fn_deletedir (object *args, object *env) {
+#if defined(sdcardsupport)
+  (void) env;
+  char pattern_string[256] ;
+
+  if (stringp(car(args))) cstring(car(args), pattern_string, 256) ;
+  else {
+    error("argument must be string", car(args)); return nil; 
+  }
+
+  test_filename(pattern_string) ;
+  SDBegin();
+  if (SD.exists(pattern_string))
+  {
+     if (SD.rmdir(pattern_string)) return tee;
+     else return nil;
+  }
+  return tee;
+#else
+  (void) args, (void) env;
+  error2("not supported");
+  return nil;
+#endif
+}
+
+
+/* (rename-file pathspec newfile)  rename or moving specified file.
+Returns true if success and otherwise returns nil.
+*/
+object *fn_renamefile (object *args, object *env) {
+#if defined(sdcardsupport)
+  (void) env;
+  char filename_string[256] ;
+  char newname_string[256] ;
+  object *firstarg = car(args);
+
+  if (stringp(car(args))) cstring(car(args), filename_string, 256) ;
+  else  {  
+    error("first argument must be string", car(args)); return nil; 
+  }
+
+  args = cdr(args);
+  
+  if (stringp(car(args)))
+    cstring(car(args), newname_string, 256) ;
+  else  {
+    error("second argument must be string", car(args)); return nil; 
+  }
+
+  test_filename(filename_string) ;
+  test_filename(newname_string) ;
+
+  SDBegin();
+  if (!SD.exists(filename_string)) {  error("File not exists", firstarg); return nil; }
+  
+  File fp_source = SD.open(filename_string, FILE_READ);
+  if (fp_source.isDirectory()) { 
+      fp_source.close() ;
+      error("argument must be a file", firstarg); return nil; 
+  }
+
+  if (SD.exists(newname_string)) SD.remove(newname_string) ;
+  File fp_dest = SD.open(newname_string, FILE_WRITE);
+  if (!fp_dest) {
+    error("cannot open destination file", car(args)); return nil; 
+  }
+
+  uint32_t i, sz ;
+  sz = fp_source.size();
+  for (i=0; i<sz;i++) fp_dest.write(fp_source.read()) ;
+
+  fp_source.close();
+  fp_dest.close();
+  SD.remove(filename_string) ;
+
+  return tee;
+#else
+  (void) args, (void) env;
+  error2("not supported");
+  return nil;
+#endif
+}
+
+/* (copy-file pathspec newfile)  copy specified file.
+Returns true if success and otherwise returns nil.
+*/
+object *fn_copyfile (object *args, object *env) {
+#if defined(sdcardsupport)
+  (void) env;
+  char filename_string[256] ;
+  char newname_string[256] ;
+  object *firstarg = car(args);
+
+  if (stringp(car(args))) cstring(car(args), filename_string, 256) ;
+  else  {  error("first argument must be string", car(args)); return nil; }
+
+  args = cdr(args);
+
+  if (stringp(car(args)))
+    cstring(car(args), newname_string, 256) ;
+  else  {
+    error("second argument must be string", car(args)); return nil; 
+  }
+
+  test_filename(filename_string) ;
+  test_filename(newname_string) ;
+
+  SDBegin();
+  if (!SD.exists(filename_string)) {
+    error("File not exists", firstarg); return nil; 
+  }
+
+  File fp_source = SD.open(filename_string, FILE_READ);
+  if (fp_source.isDirectory()) { 
+      fp_source.close() ;
+      error("argument must be a file", firstarg); return nil; 
+  }
+
+  if (SD.exists(newname_string)) SD.remove(newname_string) ;
+  File fp_dest = SD.open(newname_string,FILE_WRITE);
+  if (!fp_dest) {
+    error("cannot open destination file", car(args)); return nil; 
+  }
+
+  uint16_t i, sz ;
+  sz = fp_source.size();
+  for (i=0; i<sz;i++) fp_dest.write(fp_source.read()) ;
+
+  fp_source.close();
+  fp_dest.close();
+
+  return tee;
+#else
+  (void) args, (void) env;
+  error2("not supported");
+  return nil;
+#endif
+}
+
+/* (ensure-directories-exist pathspec)   Tests whether the specified
+directories actually exist, and attempts to create them if they do not.
+Returns true if success and otherwise returns nil.
+*/
+object *fn_ensuredirectoriesexist(object *args, object *env) {
+#if defined(sdcardsupport)
+  (void) env;
+  char pattern_string[256] ;
+ 
+  if (stringp(car(args))) cstring(car(args), pattern_string, 256) ;
+  else  {
+    error("argument must be string", car(args)); return nil; 
+  }
+
+  test_filename(pattern_string) ;
+
+  SDBegin();
+  if(!SD.exists(pattern_string)) {
+    if(SD.mkdir(pattern_string)) return tee;
+  }
+  else return tee;
+
+  return nil;
+#else
+  (void) args, (void) env;
+  error2("not supported");
+  return nil;
+#endif
+}
+
+
+
+
 
 
 // Symbol names
@@ -471,6 +770,15 @@ const char stringtouch_y[] PROGMEM = "touch-y";
 const char stringtouch_calibrate[] PROGMEM = "touch-calibrate";
 const char stringtouch_setcal[] PROGMEM = "touch-setcal";
 const char stringtouch_printcal[] PROGMEM = "touch-printcal";
+
+const char string_probefile[] PROGMEM = "probe-file";
+const char string_deletefile[] PROGMEM = "delete-file";
+const char string_deletedir[] PROGMEM = "delete-dir";
+const char string_renamefile[] PROGMEM = "rename-file";
+const char string_copyfile[] PROGMEM = "copy-file";
+const char string_ensuredirectoriesexist[] PROGMEM = "ensure-directories-exist";
+
+
 
 // Documentation strings
 const char docnow[] PROGMEM  = "(now [hh mm ss])\n"
@@ -489,6 +797,37 @@ const char doctouch_setcal[] PROGMEM = "(touch-setcal minx maxx miny maxy\n     
 "Set touchscreen calibration parameters.";
 const char doctouch_printcal[] PROGMEM = "(touch-printcal)\n"
 "Print touchscreen calibration parameters.";
+const char doc_readserial[] PROGMEM = "(read-serial)\n"
+"Reads a byte from a serial port and returns it.";
+
+
+
+const char doc_probefile[] PROGMEM = "(probe-file pathspec)\n"
+"tests whether a file exists.\n"
+" Returns nil if there is no file named pathspec,"
+" and otherwise returns the truename of pathspec.";
+
+const char doc_deletefile[] PROGMEM = "(delete-file pathspec)\n"
+"delete specified file.\n"
+" Returns true if success and otherwise returns nil.";
+
+const char doc_deletedir[] PROGMEM = "(delete-dir pathspec)\n"
+"delete specified directory.\n"
+" Returns true if success and otherwise returns nil.";
+
+const char doc_renamefile[] PROGMEM = "(rename-file filespec newfile)\n"
+"rename or moving specified file.\n"
+" Returns true if success and otherwise returns nil.";
+
+const char doc_copyfile[] PROGMEM = "(copy-file filespec newfile)\n"
+"copy specified file.\n"
+" Returns true if success and otherwise returns nil.";
+
+const char doc_ensuredirectoriesexist[] PROGMEM = "(ensure-directories-exist pathspec)\n"
+"Tests whether the specified directories actually exist,"
+" and attempts to create them if they do not.\n"
+" Returns true if success and otherwise returns nil.\n";
+
 
 
 
@@ -502,6 +841,14 @@ const tbl_entry_t lookup_table2[] PROGMEM  = {
     { stringtouch_setcal, fn_touch_setcal, 0217, doctouch_setcal },
     { stringtouch_printcal, fn_touch_printcal, 0200, doctouch_printcal },
 
+    { string_probefile, fn_probefile, 0211, doc_probefile },
+    { string_renamefile, fn_renamefile, 0222, doc_renamefile },
+    { string_copyfile, fn_copyfile, 0222, doc_copyfile },
+    { string_deletefile, fn_deletefile, 0211, doc_deletefile },
+    { string_deletedir, fn_deletedir, 0211, doc_deletedir },
+    { string_ensuredirectoriesexist, fn_ensuredirectoriesexist, 0211, doc_ensuredirectoriesexist },
+
+    { string_kbhit, fn_kbhit, 0200, doc_kbhit },
 };
 
 

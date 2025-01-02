@@ -3,7 +3,7 @@
 
 #|  Objecs management library
   These functions for simple object system are sugguested by
-  David Johnson-Davies (http://www.ulisp.com)
+  David Johnson-Davies (http://www.ulisp.com/show?37VY)
 |#
 
   (defun object (&optional parent slots)

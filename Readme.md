@@ -12,10 +12,15 @@ esp32_dialog_lib.l   - lisp source of dialog library using of the simple object 
 Call examples :
 
 (Message "message string")
+
 (Message "message string", "Cancel")
+
 (Message '("Print message string 1" "Print message string 2" "Print message string 3"))
+
 (Message '("Print message string 1" "Print message string 2" "Print message string 3") "Cancel")
+
 (Message '("Print message string 1" "Print message string 2" "Print message string 3") '("Cancel"))
+
 
 ![IMG_20250102_033022](https://github.com/user-attachments/assets/6c76c649-e2f5-48ec-8741-52d82c1609b9)
 

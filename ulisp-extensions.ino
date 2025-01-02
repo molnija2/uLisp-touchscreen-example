@@ -487,8 +487,8 @@ object *fn_kbhit (object *args, object *env) {
 
 const char string_kbhit[] = "kbhit" ;
 const char doc_kbhit[] = "(kbhit) - test whether any keyboard keys hits.\n"
-" Returns t if ney char symbols are available"
-"and otherwise returnsnil.";
+" Returns t if any char symbols are available"
+"and otherwise returns nil.";
 
 
 

@@ -16,3 +16,7 @@ Call examples :
 (Message '("message string 1" "message string 2" "message string 3"))
 (Message '("message string 1" "message string 2" "message string 3") "Cancel")
 (Message '("message string 1" "message string 2" "message string 3") '("Cancel"))
+
+![IMG_20250102_033022](https://github.com/user-attachments/assets/6c76c649-e2f5-48ec-8741-52d82c1609b9)
+
+![IMG_20250102_032701](https://github.com/user-attachments/assets/b26e49ea-af5c-40d9-9962-16ab2a920384)

@@ -21,6 +21,7 @@ Call examples :
 
 (Message '("Print message string 1" "Print message string 2" "Print message string 3") '("Cancel"))
 
+Returns 1 if "OK"-button pressed and -1 if "Cancel"-button pressed.
 
 ![IMG_20250102_033022](https://github.com/user-attachments/assets/6c76c649-e2f5-48ec-8741-52d82c1609b9)
 

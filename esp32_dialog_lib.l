@@ -220,10 +220,10 @@
         (cursor_t 0)
         (key 0)
         (returned_v 0))
-      (setq item_x (make-array lst_len))
-      (setq item_y (make-array lst_len))
-      (setq item_h (make-array lst_len))
-      (setq item_w (make-array lst_len))
+      (setq item_x (make-array lst_len :initial-element 0))
+      (setq item_y (make-array lst_len :initial-element 0))
+      (setq item_h (make-array lst_len :initial-element 0))
+      (setq item_w (make-array lst_len :initial-element 0))
       (if (null x)  (setq x (truncate (/ (- (getmaxx) (eval (value dialog 'width))) 2))))
       (if (null y)  (setq y 0))
       (cond
@@ -340,80 +340,86 @@
   (Message message-string  buttons)
    message-string - the string which will be print on dialog panel
    buttons - additional buttons to be use. "OK" - button will be exist on silence
+   Or several message strings
     (Message '("message string 1" "message string 2" "message string 3"))
     (Message '("message string 1" "message string 2" "message string 3") "Cancel")
     (Message '("message string 1" "message string 2" "message string 3") '("Cancel"))
 |#
-   (defun Message (text &optional buttons)
-    (let ((msg-form 0)
-        (btnlist 'nil)
-        (w (- (getmaxx) (truncate (/ (getmaxx) 5))))
-        (w_init (+ 2 (* (gettextwidth "0") 30))) )
-      (if (stringp text)
-        (progn
-          (let ((new-item
-                (object
-                  'label-class
-                  '(text
-                     label-text
-                     width
-                     0
-                     function
-                     0))))
-            (update new-item 'text text)
-            (update new-item 'width (- w 10))
-            (setq btnlist (append btnlist (cons new-item nil)))))
-        (if (consp text)
-          (dolist (item text)
-            (if (< w (gettextwidth item)) (setq w (gettextwidth item)))
-            (let ((new-item
-                  (object
-                    'label-class
-                    '(text
-                       label-text
-                       width
-                       0
-                       function
-                       0))))
-              (update new-item 'text item)
-              (update new-item 'width (- w 10))
-              (setq btnlist (append btnlist (cons new-item nil)))))
-          (setq w (gettextwidth "Empty message."))))
-      (if (< w w_init) (setq w w_init))
-      (if (>= w (getmaxx)) (setq w (1- (getmaxx))))
-      (setq msg-form (object
-          'dialog-form
-          '(tittle
-             "Message"
-             type
-             'dialog
-             enable
-             'true
-             layout
-             'horisontal
-             list
-             btnlist
+(defun Message (text &optional buttons)
+  (let ((msg-form 0)
+      (btnlist 'nil)
+      (w (- (getmaxx) (truncate (/ (getmaxx) 5))))
+      (w_init (+ 2 (* (gettextwidth "0") 30))))
+    (if (stringp text)
+      (progn
+        (let ((len (length btnlist)))
+          (setq btnlist (append btnlist (cons (object
+          'label-class
+          '(text
+             label-text
              width
-             (- (getmaxx) (truncate (/ (getmaxx) 5)))
-             height
              0
              function
-             27)))
-      (setq btnlist (append btnlist '(button-OK)))
-      (if (and (not (equal buttons nil)) (stringp buttons))
-        (cond
-          ((string= buttons "Cancel")
-            (setq btnlist (append btnlist '(button-ESC))))
-          (t nil)))
-      (if (consp buttons)
-        (dolist (btn buttons)
+             0)) nil)))
+          (let (( item (nth len btnlist)))
+            (update item 'text text)
+            (update item 'width (- w 10)))
+        )
+      )
+      (if (consp text)
+        (dolist (txtitem text)
+          (if (< w (gettextwidth txtitem)) (setq w (gettextwidth txtitem)))
+          (let ((len (length btnlist)))
+            (setq btnlist (append btnlist (cons (object
+            'label-class
+            '(text
+               label-text
+               width
+               0
+               function
+               0)) nil)))
+               (let (( item (nth len btnlist)))
+                 (update item 'text txtitem)
+                 (update item 'width (- w 10)))
+          )
+        )
+        (setq w (gettextwidth "Empty message."))))
+        (if (< w w_init) (setq w w_init))
+        (if (>= w (getmaxx)) (setq w (1- (getmaxx))))
+        (setq btnlist (append btnlist '(button-OK)))
+        (if (and (not (equal buttons nil)) (stringp buttons))
           (cond
-            ((and (stringp btn) (string= btn "Cancel"))
+            ((string= buttons "Cancel")
               (setq btnlist (append btnlist '(button-ESC))))
-            (t
-              (if (not (stringp btn))
-                (setq btnlist (append btnlist (cons btn))))))))
-      (show-dialog msg-form)))
+            (t nil)))
+        (if (consp buttons)
+           (dolist (btn buttons)
+             (cond
+               ((and (stringp btn) (string= btn "Cancel"))
+                 (setq btnlist (append btnlist '(button-ESC))))
+               (t
+                 (if (not (stringp btn))
+                   (setq btnlist (append btnlist (cons btn))))))))
+        (setq msg-form (object
+            'dialog-form
+            '(tittle
+               "Message"
+               type
+               'dialog
+               enable
+               'true
+               layout
+               'horisontal
+               list
+               btnlist
+               width
+               (- (getmaxx) (truncate (/ (getmaxx) 5)))
+               height
+               100
+               function
+               27)))
+        (show-dialog msg-form)))
+
 
 #|  Example of simple dialog |#
 #|  (defvar dialog-example (object

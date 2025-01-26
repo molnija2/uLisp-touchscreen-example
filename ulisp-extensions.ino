@@ -479,9 +479,12 @@ object *fn_touch_calibrate(object *args, object *env)
 
 object *fn_kbhit (object *args, object *env) {
   (void) env;
-
-  if(Serial.available()>0) return tee ;
-
+  if(LastChar>0) return tee ;
+  delay(200);
+  if(Serial.available()>0)  {
+    LastChar = Serial.read();
+    return tee ;
+  }
   return  nil;
 }
 

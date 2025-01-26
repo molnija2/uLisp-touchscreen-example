@@ -1,6 +1,5 @@
 
 (progn
-
 #|  Objecs management library
   These functions for simple object system are sugguested by
   David Johnson-Davies (http://www.ulisp.com/show?37VY)
@@ -98,7 +97,7 @@
       dialog-item
      '(enable  'true
      width 0
-     height (+ (getfontheight) 0)
+     height (+ (getfontheight) 3)
      color
      (rgb 0 0 0)
      colorbk
@@ -129,6 +128,7 @@
          function
          #'(progn (print "Cancel") -1))))
 
+
 #| Define objects width and height automatic detection |#
    (defun get-dlgitem-width (item)
     (let ((item-w (eval (value item 'width)))
@@ -148,7 +148,7 @@
           (setq text-h item-h))
       text-h))
 
-#| Dialod items paint functions |#
+#| Dialog items paint functions |#
 (defun draw-push-button (item x y)
  (let ((w (get-dlgitem-width item))(h  (get-dlgitem-height item)))
   (draw-round-rect x y (1+ w) (1+ h)  3
@@ -218,7 +218,7 @@
         (index 0)
         (form_h 0)
         (cursor_t 0)
-        (key 0)
+        (key 0)  (kbdpress 0)
         (returned_v 0))
       (setq item_x (make-array lst_len :initial-element 0))
       (setq item_y (make-array lst_len :initial-element 0))
@@ -294,25 +294,37 @@
         (setq index 0)
         (dolist (item lst)
           (funcall (eval (value item 'painter)) item (aref item_x index) (aref item_y index))
+          (draw-round-rect
+            (1+ (aref item_x index))
+            (1+ (aref item_y index))
+            (- (aref item_w index) 2)
+            (- (aref item_h index) 2)
+            3
+            (if (eq index cursor_t) (eval (value item 'colordisable)) (eval (value item 'colorbk)))
+          )
           (setq index (1+ index)))
         (setq index (1- lst_len))
         (set-cursor (+ (aref item_x index) 2)
             (1+ (aref item_y index)))
-        (loop
-          (if (touch-press)
+        (loop (if (touch-press) (progn (setq kbdpress 0) (return)))
+              (if (kbhit) (progn  (setq kbdpress 1) (return)) (delay 10)))
+        (progn
+          (if (= kbdpress 0)
             (let ((touch_x (touch-x)) (touch_y (touch-y)))
               (setq index 0)
+              (setq key -1)
               (dolist (item lst)
                 (if (and
                     (> touch_x (aref item_x index))
                     (> touch_y (aref item_y index))
                     (< touch_x (+ (aref item_x index) (aref item_w index)))
                     (< touch_y (+ (aref item_y index) (aref item_h index))))
-                  (progn (setq cursor_t index)))
+                  (progn (setq cursor_t index) (setq key 13)))
                 (setq index (1+ index)))
-              (setq key 13)
-              (return)))
-          (if (kbhit) (progn (setq key (read-key)) (return))))
+            )
+            (progn (setq key (read-key)))
+          )
+        )
         (if (or (eq key 9) (key-forRight key) (key-forDown key))
           (progn
             (setq cursor_t (1+ cursor_t))
@@ -420,7 +432,7 @@
                27)))
         (show-dialog msg-form)))
 
-
+        
 #|  Example of simple dialog |#
 #|  (defvar dialog-example (object
       'dialog-form
@@ -442,5 +454,4 @@
          function
          27)))
 |#
-
 )
